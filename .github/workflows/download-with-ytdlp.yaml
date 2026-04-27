@@ -18,7 +18,16 @@ jobs:
         run: |
           sudo add-apt-repository --yes ppa:tomtomtom/yt-dlp
           sudo apt update
-          sudo apt install --yes yt-dlp aria2
+          sudo apt install --yes yt-dlp
+
+      - name: Install aria2
+        run: |
+          sudo apt install --yes aria2
+
+      - name: Install deno
+        run: |
+          curl -fsSL https://deno.land/install.sh | sh
+          ls "$HOME/.deno/bin/deno" || exit 1
 
       - name: Extract URLs and download files
         run: |
@@ -41,6 +50,7 @@ jobs:
             yt-dlp --downloader "aria2c" \
                 --downloader-args="aria2c:--split=2 --max-connection-per-server=2 --min-split-size=90M" \
                 --output "tmp_downloads/%(title)s.%(ext)s" \
+                --js-runtimes "deno:$HOME/.deno/bin/deno" \
                 "$URL"
           done
 
