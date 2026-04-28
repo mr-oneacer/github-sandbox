@@ -29,6 +29,10 @@ jobs:
           curl -fsSL https://deno.land/install.sh | sh
           ls "$HOME/.deno/bin/deno" || exit 1
 
+      - name: Create cookies file from secrets
+        run: |
+          echo "${{ secrets.YT_COOKIES }}" > cookies.txt
+
       - name: Extract URLs and download files
         run: |
           MSG=$(git log -1 --pretty=%B)
@@ -51,6 +55,7 @@ jobs:
                 --downloader-args="aria2c:--split=2 --max-connection-per-server=2 --min-split-size=90M" \
                 --output "tmp_downloads/%(title)s.%(ext)s" \
                 --js-runtimes "deno:$HOME/.deno/bin/deno" \
+                --cookies cookies.txt \
                 "$URL"
           done
 
