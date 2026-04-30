@@ -18,7 +18,7 @@ jobs:
         run: |
           MSG=$(git log -1 --pretty=%B)
 
-          if ! echo "$MSG" | grep --quiet 'download:'; then
+          if ! echo "$MSG" | grep --quiet --extended-regexp 'download:|download-audio:'; then
             echo "❌ No download command found in commit message"
             exit 1
           fi
@@ -47,23 +47,30 @@ jobs:
           MSG=$(git log -1 --pretty=%B)
           echo "Commit message: $MSG"
 
-          if echo "$MSG" | grep --quiet 'download:'; then
-            URL_LINE=$(echo "$MSG" | grep --only-matching --perl-regexp 'download:\s*\K.*')
+          if echo "$MSG" | grep --quiet --extended-regexp 'download:|download-audio:'; then
+            URL_LINE=$(echo "$MSG" | grep --only-matching --perl-regexp 'download:|download-audio:\s*\K.*')
           fi
 
           mkdir --parents downloads tmp_downloads
+
+          args=("--downloader" "aria2c"
+                "--downloader-args" "aria2c:--split=2 --max-connection-per-server=2 --min-split-size=90M"
+                "--format" "bestvideo[height<=720]+bestaudio"
+                "--output" "tmp_downloads/%(title)s.%(ext)s"
+                "--js-runtimes" "deno:$HOME/.deno/bin/deno" "--remote-components" "ejs:github"
+                "--cookies" "cookies.txt")
+
+          if echo "$URL_LINE" | grep --quiet 'download-audio:'; then
+            args+=("--extract-audio" "--embed-thumbnail")
+          fi
+
+          echo "yt-dlp args: $args"
 
           for URL in $URL_LINE; do
             FILENAME=$(basename "$URL")
             echo "⬇️ Downloading $URL -> $FILENAME"
 
-            yt-dlp --downloader "aria2c" \
-                --downloader-args="aria2c:--split=2 --max-connection-per-server=2 --min-split-size=90M" \
-                --format "bestvideo[height<=720]+bestaudio" \
-                --output "tmp_downloads/%(title)s.%(ext)s" \
-                --js-runtimes "deno:$HOME/.deno/bin/deno" --remote-components ejs:github \
-                --cookies cookies.txt \
-                "$URL"
+            yt-dlp "${args[@]}" "$URL"
           done
 
           # Split any zip over 90MB using zip native split (unzip compatible)
