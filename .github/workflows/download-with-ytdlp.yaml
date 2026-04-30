@@ -14,6 +14,15 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: check commit for download URL
+        run: |
+          MSG=$(git log -1 --pretty=%B)
+
+          if ! echo "$MSG" | grep --quiet 'download:'; then
+            echo "❌ No download command found in commit message"
+            exit 1
+          fi
+
       - name: Install yt-dlp
         run: |
           sudo add-apt-repository --yes ppa:tomtomtom/yt-dlp
@@ -40,9 +49,6 @@ jobs:
 
           if echo "$MSG" | grep --quiet 'download:'; then
             URL_LINE=$(echo "$MSG" | grep --only-matching --perl-regexp 'download:\s*\K.*')
-          else
-            echo "❌ No download command found in commit message"
-            exit 1
           fi
 
           mkdir --parents downloads tmp_downloads
