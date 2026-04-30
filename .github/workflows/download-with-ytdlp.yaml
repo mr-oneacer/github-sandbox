@@ -69,7 +69,7 @@ jobs:
             if [ "$SIZE" -gt "$LIMIT" ]; then
               echo "✂️ $BASENAME is $(( SIZE / 1024 / 1024 ))MB — splitting with zip..."
               # zip -s creates: file.zip, file.z01, file.z02, ...
-              zip --split-size 90m "downloads/${BASENAME}.zip" --junk-paths "$FILE"
+              zip -0 --split-size 90m "downloads/${BASENAME}.zip" --junk-paths "$FILE"
               echo "✅ Parts: $(ls downloads/${BASENAME}* | wc -l)"
             else
               cp "$FILE" "downloads/$BASENAME"
