@@ -14,6 +14,15 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: check commit for download URL
+        run: |
+          MSG=$(git log -1 --pretty=%B)
+
+          if ! echo "$MSG" | grep --quiet --extended-regexp 'download-zip:|download:'; then
+            echo "❌ No download command found in commit message"
+            exit 1
+          fi
+
       - name: Install aria2
         run: sudo apt-get install -y aria2
 
@@ -28,9 +37,6 @@ jobs:
           elif echo "$MSG" | grep -qP 'download:'; then
             MODE="normal"
             URL_LINE=$(echo "$MSG" | grep -oP 'download:\s*\K.*')
-          else
-            echo "❌ No download command found in commit message"
-            exit 1
           fi
 
           echo "Mode: $MODE"
