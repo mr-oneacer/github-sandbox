@@ -66,7 +66,7 @@ jobs:
           if echo "$MSG" | grep --quiet 'download-audio:'; then
             args+=("--extract-audio" "--embed-thumbnail")
           else
-            args+=("--format" "bestvideo[height<=720]+bestaudio")
+            args+=("--format" "bestvideo[height<=720]+bestaudio" "--embed-subs")
           fi
 
           for URL in $URL_LINE; do
