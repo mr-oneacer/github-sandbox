@@ -54,7 +54,6 @@ jobs:
           mkdir --parents downloads tmp_downloads
 
           args=("--downloader" "aria2c"
-                "--downloader-args" "aria2c:--split=2 --max-connection-per-server=2 --min-split-size=90M"
                 "--output" "tmp_downloads/%(title)s.%(ext)s"
                 "--js-runtimes" "deno:$HOME/.deno/bin/deno" "--remote-components" "ejs:github"
                 "--cookies" "cookies.txt")
