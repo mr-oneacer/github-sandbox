@@ -25,9 +25,9 @@ jobs:
 
       - name: Install yt-dlp
         run: |
-          sudo add-apt-repository --yes ppa:tomtomtom/yt-dlp
-          sudo apt update
-          sudo apt install --yes yt-dlp
+          mkdir --parents $HOME/.local/bin/
+          curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o $HOME/.local/bin/yt-dlp
+          chmod a+rx $HOME/.local/bin/yt-dlp
 
       - name: Install aria2
         run: |
@@ -55,22 +55,21 @@ jobs:
 
           args=("--downloader" "aria2c"
                 "--downloader-args" "aria2c:--split=2 --max-connection-per-server=2 --min-split-size=90M"
-                "--format" "bestvideo[height<=720]+bestaudio"
                 "--output" "tmp_downloads/%(title)s.%(ext)s"
                 "--js-runtimes" "deno:$HOME/.deno/bin/deno" "--remote-components" "ejs:github"
                 "--cookies" "cookies.txt")
 
-          if echo "$URL_LINE" | grep --quiet 'download-audio:'; then
+          if echo "$MSG" | grep --quiet 'download-audio:'; then
             args+=("--extract-audio" "--embed-thumbnail")
+          else
+            args+=("--format" "bestvideo[height<=720]+bestaudio")
           fi
-
-          echo "yt-dlp args: $args"
 
           for URL in $URL_LINE; do
             FILENAME=$(basename "$URL")
             echo "⬇️ Downloading $URL -> $FILENAME"
 
-            yt-dlp "${args[@]}" "$URL"
+            $HOME/.local/bin/yt-dlp "${args[@]}" "$URL"
           done
 
           # Split any zip over 90MB using zip native split (unzip compatible)
