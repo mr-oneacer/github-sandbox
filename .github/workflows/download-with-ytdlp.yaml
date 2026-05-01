@@ -18,30 +18,23 @@ jobs:
         run: |
           MSG=$(git log -1 --pretty=%B)
 
-          if ! echo "$MSG" | grep --quiet --extended-regexp 'download:|download-audio:'; then
+          if ! echo "$MSG" | grep --quiet --extended-regexp 'ytdl:|ytdl-audio'; then
             echo "❌ No download command found in commit message"
             exit 1
           fi
 
-      - name: Install yt-dlp
+      - name: Install dependencies
         run: |
-          mkdir --parents $HOME/.local/bin/
-          curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o $HOME/.local/bin/yt-dlp
-          chmod a+rx $HOME/.local/bin/yt-dlp
+          sudo apt install --yes --no-install-recommends ffmpeg python3-mutagen
 
-      - name: Install aria2
-        run: |
-          sudo apt install --yes aria2
+          mkdir --parents $HOME/.local/bin
 
-      - name: Install deno
-        run: |
-          curl -fsSL https://deno.land/install.sh | sh
-          ls "$HOME/.deno/bin/deno" || exit 1
+          curl -fsSL https://deno.land/install.sh | DENO_INSTALL="$HOME/.local" sh
 
-      - name: Install ffmpeg
-        run: |
-          sudo apt install --yes ffmpeg
-          sudo apt install --yes python3-mutagen
+          curl --location https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp --output $HOME/.local/bin/yt-dlp
+          chmod a+rx ~/.local/bin/yt-dlp
+
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Create cookies file from secrets
         run: |
@@ -50,30 +43,23 @@ jobs:
       - name: Extract URLs and download files
         run: |
           MSG=$(git log -1 --pretty=%B)
-          echo "Commit message: $MSG"
-
-          if echo "$MSG" | grep --quiet --extended-regexp 'download:|download-audio:'; then
-            URL_LINE=$(echo "$MSG" | grep --only-matching --perl-regexp 'download:|download-audio:\s*\K.*')
-          fi
+          URL_LINE=$(echo "$MSG" | grep --only-matching --perl-regexp '(ytdl:|ytdl-audio:)\s*\K.*')
 
           mkdir --parents downloads tmp_downloads
 
           args=("--downloader" "aria2c"
                 "--output" "tmp_downloads/%(title)s.%(ext)s"
-                "--js-runtimes" "deno:$HOME/.deno/bin/deno" "--remote-components" "ejs:github"
+                "--remote-components" "ejs:github"
                 "--cookies" "cookies.txt")
 
-          if echo "$MSG" | grep --quiet 'download-audio:'; then
+          if echo "$MSG" | grep --quiet 'ytdl-audio:'; then
             args+=("--extract-audio" "--embed-thumbnail")
           else
             args+=("--format" "bestvideo[height<=720]+bestaudio" "--embed-subs")
           fi
 
           for URL in $URL_LINE; do
-            FILENAME=$(basename "$URL")
-            echo "⬇️ Downloading $URL -> $FILENAME"
-
-            $HOME/.local/bin/yt-dlp "${args[@]}" "$URL"
+            yt-dlp "${args[@]}" "$URL"
           done
 
           # Split any zip over 90MB using zip native split (unzip compatible)
