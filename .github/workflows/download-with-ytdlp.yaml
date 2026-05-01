@@ -38,6 +38,11 @@ jobs:
           curl -fsSL https://deno.land/install.sh | sh
           ls "$HOME/.deno/bin/deno" || exit 1
 
+      - name: Install ffmpeg
+        run: |
+          sudo apt install --yes ffmpeg
+          sudo apt install --yes python3-mutagen
+
       - name: Create cookies file from secrets
         run: |
           echo "${{ secrets.YT_COOKIES }}" > cookies.txt
